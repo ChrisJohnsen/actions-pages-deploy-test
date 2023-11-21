@@ -61,9 +61,9 @@ jobs:
       - run: pnpm install
       - uses: actions/configure-pages@v3
         id: pages
-      - run: >
-          pnpm build
-            --outDir=dist/"$SUBDIR"
+      - run: |
+          pnpm build \
+            --outDir=dist/"$SUBDIR" \
             --base="$BASE/$SUBDIR"
         env:
           BRANCH: ${{ matrix.branch }}
