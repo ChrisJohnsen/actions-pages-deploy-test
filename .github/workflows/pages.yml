@@ -42,7 +42,7 @@ jobs:
           printf 'Branch Matrix JSON: `%s`\n\n' "$matrix" >> $GITHUB_STEP_SUMMARY
           printf 'matrix=%s\n' "$matrix" >> $GITHUB_OUTPUT
     outputs:
-      matrix: ${{ steps.get_info.outputs.matrix }}
+      matrix: ${{ fromJson(steps.get_info.outputs.matrix) }}
 
   build:
     name: Build ${{ matrix.branch }}
