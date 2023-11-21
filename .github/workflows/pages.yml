@@ -1,0 +1,110 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+env:
+  branches: main, pu, ${{ github.ref_name }}
+
+jobs:
+  branch_info:
+    name: Convert branch/ref list to (matrix) branch info
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - id: get_info
+        run: |
+          printf 'Input Branches: `%s`\n\n' "$branches" >> $GITHUB_STEP_SUMMARY
+          info=`node --eval '
+            const bs = process.env.branches.split(",").map(b => b.trim()).filter(b => b)
+            const ubs = Array.from(new Set(bs).values())
+            const bi = ubs.map(b =>
+              b == "main"
+                ? { branch: b, subdir: "", required: true }
+                : { branch: b, subdir: b + "/" })
+            console.log(JSON.stringify(bi))
+          '`
+          printf 'Branch Info JSON: `%s`\n\n' "$info" >> $GITHUB_STEP_SUMMARY
+          printf 'info=%s\n' "$info" >> $GITHUB_OUTPUT
+    outputs:
+      info: ${{ steps.get_info.outputs.info }}
+
+  build:
+    name: Build ${{ matrix.branch }}
+    needs: branch_info
+    strategy:
+      matrix: ${{ needs.branch_info.outputs.info }}
+      fail-fast: true
+    runs-on: ubuntu-latest
+    continue-on-error: ${{ ! matrix.required }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ matrix.branch }}
+      - uses: pnpm/action-setup@v2
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+      - run: |
+          pnpm install
+          printf 'pnpm installed dependencies\n\n' >> $GITHUB_STEP_SUMMARY
+      - uses: actions/configure-pages@v3
+        id: pages
+      - run: |
+          pnpm build \
+            --outDir=dist/"$SUBDIR" \
+            --base="$BASE/$SUBDIR"
+          printf 'Built into %s\n\n' "dist/$SUBDIR" >> $GITHUB_STEP_SUMMARY
+        env:
+          BRANCH: ${{ matrix.branch }}
+          SUBDIR: ${{ matrix.subdir }}
+          BASE: ${{ steps.pages.outputs.base_path }}
+      - run: |
+          (cd dist && tar czf -) > ../pages.tar.gz
+          printf 'Created `pages.tar.gz`\n\n' >> $GITHUB_STEP_SUMMARY
+      - uses: actions/upload-artifact@v3
+        with:
+          name: pages-${{ matrix.branch }}
+          path: pages.tar.gz
+
+  deploy:
+    name: Merge and deploy builds
+    runs-on: ubuntu-latest
+    needs: build
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    permissions:
+      pages: write
+      id-token: write
+    steps:
+      - run: |
+          mkdir "$RUNNER_TEMP"/separate
+          mkdir "$RUNNER_TEMP"/combined
+      - uses: actions/download-artifact@v3
+        with:
+          # no name => download all artifacts (just from the current workflow run?)
+          path: ${{ runner.temp }}/separate
+      - run: |
+          for f in "$RUNNER_TEMP"/separate/pages-*/*.tar.gz; do
+            (cd "$RUNNER_TEMP"/combined && tar xzf -) < $f
+            printf 'Unpacked `%s`\n\n' "$f" >> $GITHUB_STEP_SUMMARY
+          done
+      - uses: actions/upload-pages-artifact@v2
+        with:
+          path: ${{ runner.temp }}/combined/
+      - uses: actions/deploy-pages@v2
+        id: deployment
+# spell-checker: words subdir
