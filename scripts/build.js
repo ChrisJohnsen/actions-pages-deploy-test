@@ -15,10 +15,12 @@ const dir =
 const file = join(dir, 'index.html')
 
 await mkdir(dir, { recursive: true })
+console.log(`created dirs for ${dir}`)
 await writeFile(
   file,
   `<html><body><p>Built into <code>${esc(dir)}</code> at ${esc(new Date())}</p></body></html>`
 )
+console.log(`wrote ${file}`)
 
 /**
  *

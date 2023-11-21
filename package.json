@@ -5,8 +5,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build-x": "node scripts/build.js",
-    "build": "node scripts/build.js --outDir=dist/sub --base=repo/sub"
+    "build": "node scripts/build.js"
   },
   "dependencies": {},
   "devDependencies": {
