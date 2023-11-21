@@ -44,7 +44,8 @@ jobs:
     name: Build ${{ matrix.branch }}
     needs: branch_info
     strategy:
-      matrix: ${{ fromJson(needs.branch_info.outputs.info) }}
+      matrix:
+        include: ${{ fromJson(needs.branch_info.outputs.info) }}
       fail-fast: true
     runs-on: ubuntu-latest
     continue-on-error: ${{ ! matrix.required }}
