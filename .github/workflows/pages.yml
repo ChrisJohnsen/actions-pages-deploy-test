@@ -42,13 +42,13 @@ jobs:
           printf 'Branch Matrix JSON: `%s`\n\n' "$matrix" >> $GITHUB_STEP_SUMMARY
           printf 'matrix=%s\n' "$matrix" >> $GITHUB_OUTPUT
     outputs:
-      matrix: ${{ fromJson(steps.get_info.outputs.matrix) }}
+      matrix: ${{ steps.get_info.outputs.matrix }}
 
   build:
     name: Build ${{ matrix.branch }}
     needs: branch_matrix
     strategy:
-      matrix: ${{ needs.branch_matrix.outputs.matrix }}
+      matrix: ${{ fromJson(needs.branch_matrix.outputs.matrix) }}
       fail-fast: true
     runs-on: ubuntu-latest
     continue-on-error: ${{ ! matrix.required }}
