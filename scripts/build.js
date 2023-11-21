@@ -28,6 +28,7 @@ console.log(`created dirs for ${dir}`)
 await writeFile(
   file,
   `<html><body>
+    <p><em>Proposed Update!</em></p>
     <p>Built into <code>${esc(dir)}</code> at ${esc(new Date())}</p>
     <p><a href="${encodeURI(base + '/index.html')}">This</a> is me.</p>
   </body></html>`
