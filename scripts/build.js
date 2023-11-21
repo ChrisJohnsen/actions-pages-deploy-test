@@ -29,7 +29,7 @@ await writeFile(
   file,
   `<html><body>
     <p>Built into <code>${esc(dir)}</code> at ${esc(new Date())}</p>
-    <p><a href="${encodeURI(base + '/index.html')}">This</a> is me?</p>
+    <p><a href="${encodeURI(base + '/index.html')}">This</a> is me.</p>
   </body></html>`
 )
 console.log(`wrote ${file}`)
