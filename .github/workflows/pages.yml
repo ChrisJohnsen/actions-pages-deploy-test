@@ -102,7 +102,8 @@ jobs:
           # no name => download all artifacts (just from the current workflow run?)
           path: ${{ runner.temp }}/separate
       - run: |
-          for f in "$RUNNER_TEMP"/separate/pages-*/*.tar.gz; do
+          ls -lR "$RUNNER_TEMP"/separate/
+          for f in "$RUNNER_TEMP"/separate/*/*.tar.gz; do
             (cd "$RUNNER_TEMP"/combined && tar xzf -) < $f
             printf 'Unpacked `%s`\n\n' "$f" >> $GITHUB_STEP_SUMMARY
           done
