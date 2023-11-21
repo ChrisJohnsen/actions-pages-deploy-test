@@ -87,7 +87,8 @@ jobs:
       pages: write
       id-token: write
     steps:
-      - run: |
+      - name: Create dirs for artifact download and unpacking
+        run: |
           mkdir "$RUNNER_TEMP"/separate
           mkdir "$RUNNER_TEMP"/combined
       - uses: actions/download-artifact@v3
