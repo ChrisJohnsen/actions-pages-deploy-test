@@ -16,8 +16,8 @@ env:
   branches: main, pu, ${{ github.ref_name }}
 
 jobs:
-  branch_info:
-    name: Convert branch/ref list to (matrix) branch info
+  branch_matrix:
+    name: Convert branch/ref list to branch matrix
     runs-on: ubuntu-latest
     steps:
       - uses: actions/setup-node@v4
@@ -26,25 +26,29 @@ jobs:
       - id: get_info
         run: |
           printf 'Input Branches: `%s`\n\n' "$branches" >> $GITHUB_STEP_SUMMARY
-          info=`node --eval '
+          matrix=`node --eval '
             const bs = process.env.branches.split(",").map(b => b.trim()).filter(b => b)
             const ubs = Array.from(new Set(bs).values())
-            const bi = ubs.map(b =>
-              b == "main"
-                ? { branch: b, subdir: "", required: true }
-                : { branch: b, subdir: b + "/" })
-            console.log(JSON.stringify(bi))
+            const m = {
+              branch: ubs,
+              include: [
+                {branch: "main", subdir: "", required: true },
+                ...ubs.filter(b => b != "main")
+                  .map(b => ({ branch: b, subdir: b +"/" }))
+              ]
+            }
+            console.log(JSON.stringify(m))
           '`
-          printf 'Branch Info JSON: `%s`\n\n' "$info" >> $GITHUB_STEP_SUMMARY
-          printf 'info=%s\n' "$info" >> $GITHUB_OUTPUT
+          printf 'Branch Matrix JSON: `%s`\n\n' "$matrix" >> $GITHUB_STEP_SUMMARY
+          printf 'matrix=%s\n' "$matrix" >> $GITHUB_OUTPUT
     outputs:
-      info: ${{ steps.get_info.outputs.info }}
+      matrix: ${{ steps.get_info.outputs.matrix }}
 
   build:
     name: Build ${{ matrix.branch }}
-    needs: branch_info
+    needs: branch_matrix
     strategy:
-      matrix: ${{ needs.branch_info.outputs.info }}
+      matrix: ${{ needs.branch_matrix.outputs.matrix }}
       fail-fast: true
     runs-on: ubuntu-latest
     continue-on-error: ${{ ! matrix.required }}
