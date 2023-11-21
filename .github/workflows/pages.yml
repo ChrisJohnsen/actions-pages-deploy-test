@@ -17,15 +17,15 @@ env:
 
 jobs:
   branch_info:
-    name: Convert branch/ref list to (matrix) branch info
+    name: Convert ref list to matrix include
     runs-on: ubuntu-latest
     steps:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
       - id: get_info
+        name: Convert ref list to matrix include
         run: |
-          printf 'Input Branches: `%s`\n\n' "$branches" >> $GITHUB_STEP_SUMMARY
           info=`node --eval '
             const bs = process.env.branches.split(",").map(b => b.trim()).filter(b => b)
             const ubs = Array.from(new Set(bs).values())
@@ -35,7 +35,7 @@ jobs:
                 : { branch: b, subdir: b + "/" })
             console.log(JSON.stringify(bi))
           '`
-          printf 'Branch Info JSON: `%s`\n\n' "$info" >> $GITHUB_STEP_SUMMARY
+          printf 'Branch Info JSON: `%s`\n\n' "$info"
           printf 'info=%s\n' "$info" >> $GITHUB_OUTPUT
     outputs:
       info: ${{ steps.get_info.outputs.info }}
@@ -58,23 +58,19 @@ jobs:
         with:
           node-version: 20
           cache: pnpm
-      - run: |
-          pnpm install
-          printf 'pnpm installed dependencies\n\n' >> $GITHUB_STEP_SUMMARY
+      - run: pnpm install
       - uses: actions/configure-pages@v3
         id: pages
-      - run: |
-          pnpm build \
-            --outDir=dist/"$SUBDIR" \
+      - run: >
+          pnpm build
+            --outDir=dist/"$SUBDIR"
             --base="$BASE/$SUBDIR"
-          printf 'Built into %s\n\n' "dist/$SUBDIR" >> $GITHUB_STEP_SUMMARY
         env:
           BRANCH: ${{ matrix.branch }}
           SUBDIR: ${{ matrix.subdir }}
           BASE: ${{ steps.pages.outputs.base_path }}
-      - run: |
-          (cd dist && tar czf - .) > pages.tar.gz
-          printf 'Created `pages.tar.gz`\n\n' >> $GITHUB_STEP_SUMMARY
+      - name: Create (partial) pages artifact for ${{ matrix.branch }}
+        run: (cd dist && tar czf - .) > pages.tar.gz
       - uses: actions/upload-artifact@v3
         with:
           name: pages-${{ matrix.branch }}
@@ -98,11 +94,11 @@ jobs:
         with:
           # no name => download all artifacts (just from the current workflow run?)
           path: ${{ runner.temp }}/separate
-      - run: |
+      - name: Merge pages artifacts
+        run: |
           cd "$RUNNER_TEMP"/separate
           for f in pages-*/*.tar.gz; do
             (cd "$RUNNER_TEMP"/combined && tar xzf -) < $f
-            printf 'Unpacked `%s`\n\n' "$f" >> $GITHUB_STEP_SUMMARY
           done
       - uses: actions/upload-pages-artifact@v2
         with:
