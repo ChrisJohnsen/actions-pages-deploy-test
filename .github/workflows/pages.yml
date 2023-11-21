@@ -76,7 +76,7 @@ jobs:
           SUBDIR: ${{ matrix.subdir }}
           BASE: ${{ steps.pages.outputs.base_path }}
       - run: |
-          (cd dist && tar czf - .) > ../pages.tar.gz
+          (cd dist && tar czf - .) > pages.tar.gz
           printf 'Created `pages.tar.gz`\n\n' >> $GITHUB_STEP_SUMMARY
       - uses: actions/upload-artifact@v3
         with:
