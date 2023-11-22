@@ -13,7 +13,8 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  branches: main, pu, ${{ github.ref_name }}
+  # list default branch first in always_build (root in combined pages, and helps with caching)
+  always_build: main, pu
 
 jobs:
   branch_info:
@@ -27,16 +28,29 @@ jobs:
         name: Convert ref list to matrix include
         run: |
           info=`node --eval '
-            const bs = process.env.branches.split(",").map(b => b.trim()).filter(b => b)
-            const ubs = Array.from(new Set(bs).values())
-            const bi = ubs.map(b =>
-              b == "main"
-                ? { branch: b, subdir: "", required: true }
-                : { branch: b, subdir: b + "/" })
+            const bs = process.env.always_build.split(",")
+              .map(b => b.trim()).filter(b => b)
+            const trig = process.env.trigger.trim()
+            if(trig) b.push(trig)
+            const ubs = Array.from(new Set(b).values())
+
+            const def = b[0]
+            const required = b => b == def || b == trig
+            const cache = b => trig == def || b != trig
+            const subdir = b => b == def ? "" : b + "/"
+
+            const bi = ubs.map(b => ({
+              branch: b,
+              subdir: subdir(b),
+              required: required(b),
+              cache: cache(b)
+            }))
             console.log(JSON.stringify(bi))
           '`
           printf 'Branch Info JSON: `%s`\n\n' "$info"
           printf 'info=%s\n' "$info" >> $GITHUB_OUTPUT
+        env:
+          trigger: ${{ github.ref_name }}
     outputs:
       info: ${{ steps.get_info.outputs.info }}
 
@@ -53,15 +67,30 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: ${{ matrix.branch }}
-      - uses: pnpm/action-setup@v2
-      - uses: actions/setup-node@v4
+      - name: Get SHA of HEAD
+        id: sha
+        run: printf 'sha=%s\n' "$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
+      - if: ${{ matrix.cache }}
+        name: Cache dist/
+        id: cache
+        uses: actions/cache@v3
+        with:
+          path: dist
+          key: ${{ steps.sha.outputs.sha }}
+      - if: ${{ ! matrix.cache || ! steps.cache.outputs.cache-hit }}
+        uses: pnpm/action-setup@v2
+      - if: ${{ ! matrix.cache || ! steps.cache.outputs.cache-hit }}
+        uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: pnpm
-      - run: pnpm install
-      - uses: actions/configure-pages@v3
+      - if: ${{ ! matrix.cache || ! steps.cache.outputs.cache-hit }}
+        run: pnpm install
+      - if: ${{ ! matrix.cache || ! steps.cache.outputs.cache-hit }}
+        uses: actions/configure-pages@v3
         id: pages
-      - run: |
+      - if: ${{ ! steps.cache.outputs.cache-hit }}
+        run: |
           pnpm build \
             --outDir=dist/"$SUBDIR" \
             --base="$BASE/$SUBDIR"
