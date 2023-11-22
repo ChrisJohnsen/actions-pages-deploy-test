@@ -10,7 +10,6 @@ permissions:
 
 concurrency:
   group: pages
-  cancel-in-progress: true
 
 env:
   # list default branch first in always_build (root in combined pages, and helps with caching)
@@ -76,7 +75,7 @@ jobs:
         uses: actions/cache@v3
         with:
           path: dist
-          key: ${{ steps.sha.outputs.sha }}
+          key: built-pages-${{ matrix.subdir }}-${{ steps.sha.outputs.sha }}
       - if: ${{ ! matrix.cache || ! steps.cache.outputs.cache-hit }}
         uses: pnpm/action-setup@v2
       - if: ${{ ! matrix.cache || ! steps.cache.outputs.cache-hit }}
