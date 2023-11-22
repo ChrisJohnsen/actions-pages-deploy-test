@@ -30,11 +30,11 @@ jobs:
           info=`node --eval '
             const bs = process.env.always_build.split(",")
               .map(b => b.trim()).filter(b => b)
-            const trig = process.env.trigger.trim()
-            if(trig) b.push(trig)
-            const ubs = Array.from(new Set(b).values())
+            const trig = process.env.trigger?.trim()
+            if(trig) bs.push(trig)
+            const ubs = Array.from(new Set(bs).values())
 
-            const def = b[0]
+            const def = bs[0]
             const required = b => b == def || b == trig
             const cache = b => trig == def || b != trig
             const subdir = b => b == def ? "" : b + "/"
