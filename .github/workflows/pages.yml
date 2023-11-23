@@ -31,6 +31,8 @@ jobs:
           default=$(gh repo view --json defaultBranchRef --jq .defaultBranchRef.name)
           printf 'Default branch: `%s`\n\n' "$default"
           printf 'branch=%s\n' "$default" >> $GITHUB_OUTPUT
+        env:
+          GH_TOKEN: ${{ github.token }}
       - id: get_info
         name: Convert ref list to matrix include
         run: |
