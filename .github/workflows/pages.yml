@@ -28,7 +28,6 @@ jobs:
       - id: default_branch
         name: Get repo's default branch
         run: |
-          gh repo view --json
           default=$(gh repo view --json defaultBranchRef --jq .defaultBranchRef.name)
           printf 'Default branch: `%s`\n\n' "$default"
           printf 'branch=%s\n' "$default" >> $GITHUB_OUTPUT
