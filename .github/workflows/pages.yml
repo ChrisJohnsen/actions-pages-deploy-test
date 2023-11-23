@@ -28,10 +28,16 @@ jobs:
       - id: default_branch
         name: Get repo's default branch
         run: |
-          default=$(gh repo view --json defaultBranchRef --jq .defaultBranchRef.name)
+          pwd
+          echo "$GITHUB_WORKSPACE"
+          cd "$GITHUB_WORKSPACE"
+          git remote show || true
+          (unset GH_TOKEN;gh api /repos/"$REPO" --jq .default_branch) || true
+          default=$(gh api /repos/"$REPO" --jq .default_branch)
           printf 'Default branch: `%s`\n\n' "$default"
           printf 'branch=%s\n' "$default" >> $GITHUB_OUTPUT
         env:
+          REPO: ${{ github.repository }}
           GH_TOKEN: ${{ github.token }}
       - id: get_info
         name: Convert ref list to matrix include
@@ -146,4 +152,4 @@ jobs:
           path: ${{ runner.temp }}/combined/
       - uses: actions/deploy-pages@v2
         id: deployment
-# spell-checker: words subdir
+# spell-checker: words subdir subdirs
