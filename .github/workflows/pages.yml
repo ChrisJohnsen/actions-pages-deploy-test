@@ -28,12 +28,7 @@ jobs:
       - id: default_branch
         name: Get repo's default branch
         run: |
-          pwd
-          echo "$GITHUB_WORKSPACE"
-          cd "$GITHUB_WORKSPACE"
-          git remote show || true
-          (unset GH_TOKEN;gh api /repos/"$REPO" --jq .default_branch) || true
-          default=$(gh api /repos/"$REPO" --jq .default_branch)
+          default=$(gh api /repos/"$REPO" --jq .default_branch) # https://stackoverflow.com/a/28669194
           printf 'Default branch: `%s`\n\n' "$default"
           printf 'branch=%s\n' "$default" >> $GITHUB_OUTPUT
         env:
