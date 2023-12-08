@@ -12,10 +12,10 @@ concurrency:
   group: pages
 
 env:
-  # first always_build branch is rendered to Pages root; others are put in /{branch-name} subdirs
+  # first build_branches branch is rendered to Pages root; others are put in /{branch-name} subdirs
 
   # even if the repo's default branch isn't going to be the Pages root, it should probably be built since its caches can be used when the workflow is triggered for other branches
-  always_build: main, pu
+  build_branches: main, pu
 
 jobs:
   branch_info:
@@ -43,7 +43,7 @@ jobs:
         name: Convert ref list to matrix include
         run: |
           info=`node --eval '
-            const bs = process.env.always_build.split(",")
+            const bs = process.env.build_branches.split(",")
               .map(b => b.trim()).filter(b => b)
             const trig = process.env.trigger?.trim()
             if(trig) bs.push(trig)
