@@ -33,7 +33,6 @@ jobs:
           printf 'default=%s\n' "$default" >> $GITHUB_OUTPUT
 
           # NOTE: if there are too many branches, this may not be a complete list due to API pagination
-          gh api /repos/"$REPO"/branches
           branches=$(gh api /repos/"$REPO"/branches --jq '[ .[] | .name ]')
           printf 'All Branches: `%s`\n\n' "$branches"
           printf 'list=%s\n' "$branches" >> $GITHUB_OUTPUT
