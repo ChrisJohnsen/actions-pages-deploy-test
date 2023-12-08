@@ -25,12 +25,18 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-      - id: default_branch
-        name: Get repo's default branch
+      - id: branches
+        name: Get repo's branch info
         run: |
           default=$(gh api /repos/"$REPO" --jq .default_branch) # https://stackoverflow.com/a/28669194
           printf 'Default branch: `%s`\n\n' "$default"
-          printf 'branch=%s\n' "$default" >> $GITHUB_OUTPUT
+          printf 'default=%s\n' "$default" >> $GITHUB_OUTPUT
+
+          # NOTE: if there are too many branches, this may not be a complete list due to API pagination
+          gh api /repos/"$REPO"/branches
+          branches=$(gh api /repos/"$REPO"/branches --jq '[ .[] | .name ]')
+          printf 'All Branches: `%s`\n\n' "$branches"
+          printf 'list=%s\n' "$branches" >> $GITHUB_OUTPUT
         env:
           REPO: ${{ github.repository }}
           GH_TOKEN: ${{ github.token }}
@@ -42,9 +48,11 @@ jobs:
               .map(b => b.trim()).filter(b => b)
             const trig = process.env.trigger?.trim()
             if(trig) bs.push(trig)
-            const ubs = Array.from(new Set(bs).values())
+            const bl = new Set(JSON.parse(process.env.branches))
+            const ubs = Array.from(new Set(bs))
+              .filter((b, i) => i < 1 || bl.has(b))
 
-            const root = bs[0]
+            const root = ubs[0]
             const def = process.env.default?.trim() ?? "main"
             const required = b => b == root || b == trig
             const cache = b => trig == def || b != trig
@@ -61,7 +69,8 @@ jobs:
           printf 'Branch Info JSON: `%s`\n\n' "$info"
           printf 'info=%s\n' "$info" >> $GITHUB_OUTPUT
         env:
-          default: ${{ steps.default_branch.outputs.branch }}
+          default: ${{ steps.branches.outputs.default }}
+          branches: ${{ steps.branches.outputs.list }}
           trigger: ${{ github.ref_name }}
     outputs:
       info: ${{ steps.get_info.outputs.info }}
