@@ -97,19 +97,19 @@ jobs:
         with:
           path: dist
           key: built-pages-${{ matrix.subdir }}-${{ steps.sha.outputs.sha }}
-      - if: ${{ ! matrix.cache || ! steps.cache.outputs.cache-hit }}
+      - if: ${{ ! steps.cache.outputs.cache-hit }}
         uses: pnpm/action-setup@v2
-      - if: ${{ ! matrix.cache || ! steps.cache.outputs.cache-hit }}
+      - if: ${{ ! steps.cache.outputs.cache-hit }}
         uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: pnpm
-      - if: ${{ ! matrix.cache || ! steps.cache.outputs.cache-hit }}
+      - if: ${{ ! steps.cache.outputs.cache-hit }}
         run: pnpm install
-      - if: ${{ ! matrix.cache || ! steps.cache.outputs.cache-hit }}
+      - if: ${{ ! steps.cache.outputs.cache-hit }}
         uses: actions/configure-pages@v4
         id: pages
-      - if: ${{ ! matrix.cache || ! steps.cache.outputs.cache-hit }}
+      - if: ${{ ! steps.cache.outputs.cache-hit }}
         run: |
           pnpm build \
             --outDir=dist/"$SUBDIR" \
